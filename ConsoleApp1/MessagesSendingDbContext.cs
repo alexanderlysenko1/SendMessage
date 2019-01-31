@@ -9,10 +9,13 @@ namespace ConsoleApp1
 {
     class MessagesSendingDbContext: DbContext
     {
-        public MessagesSendingDbContext() : base("MessagesSendingDB") { }
+        public MessagesSendingDbContext() : base("MessagesSendingDB2") { }
 
         public DbSet<User> Users { get; set; }
         public DbSet<Message> Messages { get; set; }
         public DbSet<Recepient> Recepients { get; set; }
+
+
     }
+
 }

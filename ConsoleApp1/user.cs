@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.RegularExpressions;
 
 namespace ConsoleApp1
 {
@@ -12,9 +13,55 @@ namespace ConsoleApp1
     {
         [Key]
         public string UserId { get; set; }
+        private string userPhone;
+        public string UserPhone
+        { 
+            get
+            {
+                return userPhone;
+            }
+            set
+            {
+                Regex phoneRegex = new Regex(@"^\+[0-9]{12}");
+                
+                if (phoneRegex.IsMatch(value))
+                {
+                    userPhone = value;
+                }
+                else
+                { 
+                    Console.WriteLine("Invalid phone number");
+                   
+                }
+
+            }
+  
+        }
         public string Passeword { get; set; }
         public string FullName { get; set; }
-        public string Address { get; set; }
+        protected string userAddress;
+        public string Address
+        {
+            get { return userAddress; }
+
+
+            set
+            {
+                Regex phoneRegex = new Regex(@"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$");
+
+                if (phoneRegex.IsMatch(value))
+                {
+                    userAddress = value;
+                }
+                else
+                {
+                    Console.WriteLine("Invalid adress ");
+
+                }
+
+            }
+        }
+
 
         public ICollection<Message> Messages { get; set; }
 

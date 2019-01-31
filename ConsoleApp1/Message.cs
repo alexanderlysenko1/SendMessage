@@ -17,7 +17,6 @@ namespace ConsoleApp1
         public DateTime DateOfSend { get; set; }
         public DateTime TimeOfSend { get; set; }
         public string TextOfMessage { get; set; }
-
         [ForeignKey("SenderPhone")]
         public User Sender { get; set; }
         [ForeignKey("RecepientPhone")]
