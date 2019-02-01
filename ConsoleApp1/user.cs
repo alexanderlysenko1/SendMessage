@@ -6,14 +6,19 @@ using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.RegularExpressions;
+using System.Runtime.Serialization.Json;
+using System.Runtime.Serialization;
 
 namespace ConsoleApp1
 {
     [Serializable]
+    [DataContract]
     class User
     {
-        [Key]
+        [Key] 
+        [DataMember]
         public string UserId { get; set; }
+        [DataMember]
         private string userPhone;
         public string UserPhone
         { 

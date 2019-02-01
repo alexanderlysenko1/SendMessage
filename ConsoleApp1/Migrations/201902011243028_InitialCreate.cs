@@ -29,6 +29,7 @@ namespace ConsoleApp1.Migrations
                 c => new
                     {
                         RecepientId = c.String(nullable: false, maxLength: 128),
+                        RecepientPhone = c.String(),
                         FullName = c.String(),
                         Address = c.String(),
                     })

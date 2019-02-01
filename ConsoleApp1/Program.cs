@@ -5,6 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Json;
+using System.IO;
 
 namespace ConsoleApp1
 {
@@ -12,6 +15,7 @@ namespace ConsoleApp1
     {
         static void Main(string[] args)
         {
+           
             MessagesSendingDbContext db = new MessagesSendingDbContext();
             /*  User user = new User();
             user.UserId = "+380994006143";
@@ -29,7 +33,7 @@ namespace ConsoleApp1
                 Console.WriteLine("Invalid phone number");
                 return;
             }
-            User user = db.Users.FirstOrDefault(p => p.UserId == phoneNumber);
+            User user = db.Users.FirstOrDefault(p => p.UserId== phoneNumber);
             string answer;
             if (user == null)
             {
@@ -70,6 +74,11 @@ namespace ConsoleApp1
                 newMessage.Sender = user;
                 Console.WriteLine("Input message's text:");
                 newMessage.TextOfMessage = Console.ReadLine();
+                newMessage.DateOfSend = DateTime.Now;
+                newMessage.TimeOfSend = DateTime.Now;
+                db.SaveChanges();
+               
+                bool stop = false;
                 do
                 {
                     Console.WriteLine("Input recipient's phone number: ");
@@ -79,8 +88,8 @@ namespace ConsoleApp1
                         Console.WriteLine("Invalid phone number");
                         return;
                     }
-                    Recepient recepient = db.Recepients.FirstOrDefault(p => p.RecepientId == phoneNumber);
-                    if (user == null)
+                    Recepient recepient = db.Recepients.FirstOrDefault(p => p.RecepientPhone== phoneNumber);
+                    if (recepient == null)
                     {
                         Console.WriteLine("Cant find reciepient");
                         Console.WriteLine("Want to regitrate(Yes/No)");
@@ -89,6 +98,7 @@ namespace ConsoleApp1
                         {
                             Recepient newRecepient = RecepientRegistration();
                             db.Recepients.Add(newRecepient);
+                            db.SaveChanges();
 
                         }
                         else
@@ -96,10 +106,16 @@ namespace ConsoleApp1
                             Console.WriteLine("Thanks for visit");
                             return;
                         }
+                        Console.WriteLine("Want you add other recepient?(Yes/No): ");
+                        answer = Console.ReadLine().ToLower();
+                        if (answer == "yes") { stop = false; }
+                        else { stop = true; }
                     }
+
                 }
-                while (answer=="no");
+                while (!stop);
             }
+           
         
 
         }
@@ -124,11 +140,12 @@ namespace ConsoleApp1
             newRecepient.RecepientId = Console.ReadLine();
             Console.WriteLine("Input full name: ");
             newRecepient.FullName = Console.ReadLine();
-           
+            Console.WriteLine("Input address: ");
+            newRecepient.Address = Console.ReadLine();
+
             return newRecepient;
         }
-
-
+   
     }
 
 

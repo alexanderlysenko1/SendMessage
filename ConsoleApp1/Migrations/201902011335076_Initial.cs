@@ -3,10 +3,8 @@ namespace ConsoleApp1.Migrations
     using System;
     using System.Data.Entity.Migrations;
     
-    public partial class TestSend : DbMigration
+    public partial class Initial : DbMigration
     {
-        short curItem = 0, c;
-        ConsoleKeyInfo key;
         public override void Up()
         {
         }
