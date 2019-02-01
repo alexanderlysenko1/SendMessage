@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 
 namespace ConsoleApp1
 {
+    [Serializable]
     class User
     {
         [Key]
@@ -30,7 +31,7 @@ namespace ConsoleApp1
                 }
                 else
                 { 
-                    Console.WriteLine("Invalid phone number");
+                   Console.WriteLine("Invalid phone number");
                    
                 }
 
@@ -55,7 +56,7 @@ namespace ConsoleApp1
                 }
                 else
                 {
-                    Console.WriteLine("Invalid adress ");
+               Console.WriteLine("Invalid adress ");
 
                 }
 
@@ -68,6 +69,13 @@ namespace ConsoleApp1
         public User()
         {
             Messages = new List<Message>();
+        }
+
+        public User(string userPhone, string password, string fullName, string address)
+        {
+            UserPhone = userPhone;
+            Passeword = password;
+            FullName = fullName;
         }
     }
 }
