@@ -10,7 +10,6 @@ namespace ConsoleApp1.Migrations
         public Configuration()
         {
             AutomaticMigrationsEnabled = false;
-            ContextKey = "ConsoleApp1.MessagesSendingDbContext";
         }
 
         protected override void Seed(ConsoleApp1.MessagesSendingDbContext context)

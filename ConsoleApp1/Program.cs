@@ -1,154 +1,259 @@
-﻿using System;
+﻿using ConsoleApp1.Repository;
+using System;
 using System.Collections.Generic;
-using System.Data.Entity.Validation;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using System.Runtime.Serialization;
-using System.Runtime.Serialization.Json;
+using static System.Console;
 using System.IO;
+using System.Runtime.Serialization.Json;
+using System.Runtime.Serialization;
 
 namespace ConsoleApp1
 {
     class Program
     {
+        static UserRepository userRepository;
+        static MessageRepository messageRepository;
+        static RecepientMessageRepository recepientMessageRepository;
+        static RecepientRepository recepientRepository;
+        static User user;
+        static string phoneNumber;
+        static Regex phoneRegex;
+        static string answer;
+
         static void Main(string[] args)
         {
-           
-            MessagesSendingDbContext db = new MessagesSendingDbContext();
-            /*  User user = new User();
-            user.UserId = "+380994006143";
-              user.FullName = "Alexander";
-              user.Address = "alexander.lysenko1@gmail.com";
-
-              db.Users.Add(user);
-              db.SaveChanges();*/
-
-            Console.WriteLine("Input phone number:");
-            string phoneNumber = Console.ReadLine();
-            Regex phoneRegex = new Regex(@"^\+[0-9]{12}");
-            if (!phoneRegex.IsMatch(phoneNumber))
+            using (MessagesSendingDbContext db = new MessagesSendingDbContext())
             {
-                Console.WriteLine("Invalid phone number");
-                return;
-            }
-            User user = db.Users.FirstOrDefault(p => p.UserId== phoneNumber);
-            string answer;
-            if (user == null)
-            {
-                Console.WriteLine("Cant find user");
-                Console.WriteLine("Want to regitrate(Yes/No)");
-                answer = Console.ReadLine().ToLower();
-                if (answer == "yes")
-                {
-                    db.Users.Add(UserRegistration());
-                    db.SaveChanges();
-                    string[] vs = new string[1];
-                    Main(vs);
-                    return;
-                }
-                else
-                {
-                    Console.WriteLine("Thanks for visit");
-                    return;
-                }
-            }
-            Console.WriteLine("Input password: ");
-            if (user.Passeword == Console.ReadLine())
-            {
-                Console.WriteLine("Log in");
-            }
-            else
-            {
-                Console.WriteLine("Wrong password!");
-                Console.WriteLine("Thanks for visit");
-                return;
-            }
-              
-            Console.WriteLine("Want you add new message?(Yes/No): ");
-            answer = Console.ReadLine().ToLower();
-            if (answer == "yes")
-            {
-                Message newMessage = new Message();
-                newMessage.Sender = user;
-                Console.WriteLine("Input message's text:");
-                newMessage.TextOfMessage = Console.ReadLine();
-                newMessage.DateOfSend = DateTime.Now;
-                newMessage.TimeOfSend = DateTime.Now;
-                db.SaveChanges();
+                userRepository = new UserRepository(db);
+                messageRepository = new MessageRepository(db);
+                recepientMessageRepository = new RecepientMessageRepository(db);
+                recepientRepository = new RecepientRepository(db);
                
-                bool stop = false;
-                do
-                {
-                    Console.WriteLine("Input recipient's phone number: ");
-                    phoneNumber = Console.ReadLine();
+                phoneRegex = new Regex(@"^\+[0-9]{12}");
+                user = new User();
+                EnterMenu();
+            }
+        }
+
+        static void EnterMenu()
+        {
+            int resOfChoose = UserInterface("Log in", "Registrate", "Exit");
+            switch (resOfChoose)
+            {
+                case 0:
+                    WriteLine("Input phone number:");
+                    phoneNumber = ReadLine();
                     if (!phoneRegex.IsMatch(phoneNumber))
                     {
-                        Console.WriteLine("Invalid phone number");
-                        return;
+                        WriteLine("Invalid phone number");
                     }
-                    Recepient recepient = db.Recepients.FirstOrDefault(p => p.RecepientPhone== phoneNumber);
-                    if (recepient == null)
-                    {
-                        Console.WriteLine("Cant find reciepient");
-                        Console.WriteLine("Want to regitrate(Yes/No)");
-                        answer = Console.ReadLine().ToLower();
-                        if (answer == "yes")
-                        {
-                            Recepient newRecepient = RecepientRegistration();
-                            db.Recepients.Add(newRecepient);
-                            db.SaveChanges();
+                    WriteLine("Input password: ");
+                    string password = ReadLine();
 
+                    user = userRepository.GetByPhoneNumber(phoneNumber);
+                    if (user == null)
+                    {
+                        WriteLine("Wrong Phone number or password");
+                        EnterMenu();
+                    }
+                    if (user.Password == password)
+                    {
+                        WriteLine("Log in");
+                    }
+                    MessegesRecipientsMenu();
+                    break;
+                case 1:
+                    userRepository.Create(UserRegistration());
+                    userRepository.SaveChanges();
+                    EnterMenu();
+                    return;
+                case 2:
+                    return;
+                default:
+                    WriteLine("Goodbye");
+                    return;
+            }
+        }
+
+        static void MessegesRecipientsMenu()
+        {
+            int resOfChoose = UserInterface("View messages", "Add message", "View your recipeints", "Add new recipient", "Exit");
+            switch (resOfChoose)
+            {
+                case 0:
+                    var messages = messageRepository.GetMessagesBySenderId(user.UserId);
+                    foreach (Message message in messages)
+                    {
+                        WriteLine("Text of message: {0}", message.TextOfMessage);
+                        var messagesResipients = recepientMessageRepository.GetRecepientsMessagesByMessageId(message.MessageId);
+                        WriteLine("Recipients:");
+                        foreach (RecepientMessage recepientMessage in messagesResipients)
+                        {
+                            Recepient recepient = recepientRepository.GetById(recepientMessage.RecepientId);
+                            WriteLine("Recepient's name: {0}  phone number: {1} ", recepient.FullName, recepient.RecepientPhone);
+                        }
+                    }
+                    WriteLine("Press any key to return");
+                    ReadKey();
+                    MessegesRecipientsMenu();
+                    return;
+                case 1:
+                    Message newMessage = new Message();
+                    newMessage.Sender = user;
+                    WriteLine("Input your message:");
+                    newMessage.TextOfMessage = ReadLine();
+                    newMessage.DateOfSend = DateTime.Now;
+                    newMessage.TimeOfSend = DateTime.Now;
+                    messageRepository.Create(newMessage);
+                    messageRepository.SaveChanges();
+                    messageRepository.SetInFileJson(newMessage);
+                    bool stop = false;
+                    do
+                    {
+                        WriteLine("Input recipients phone number: ");
+                        phoneNumber = ReadLine();
+                        if (!phoneRegex.IsMatch(phoneNumber))
+                        {
+                            WriteLine("Invalid phone number");
+                            return;
+                        }
+                        Recepient recepient = recepientRepository.GetByPhoneNumber(phoneNumber);
+                        if (recepient == null)
+                        {
+                            WriteLine("Cant find reciepient");
+                            WriteLine("Want to regitrate(Yes/No)");
+                            answer = ReadLine().ToLower();
+                            if (answer == "yes")
+                            {
+                                Recepient newRecepient = RecepientRegistration();
+                                recepientRepository.Create(newRecepient);
+                                recepientRepository.SaveChanges();
+                                RecepientMessage newRecepientMessage = new RecepientMessage();
+                                newRecepientMessage.Recepient = newRecepient;
+                                newRecepientMessage.Message = newMessage;
+                                recepientMessageRepository.Create(newRecepientMessage);
+                                recepientMessageRepository.SaveChanges();
+                            }
+                            else
+                            {
+                                WriteLine("Goodbye");
+                                return;
+                            }
                         }
                         else
                         {
-                            Console.WriteLine("Thanks for visit");
-                            return;
+                            RecepientMessage newRecepientMessage = new RecepientMessage();
+                            newRecepientMessage.Recepient = recepient;
+                            newRecepientMessage.Message = newMessage;
+                            recepientMessageRepository.Create(newRecepientMessage);
+                            recepientMessageRepository.SaveChanges();
                         }
-                        Console.WriteLine("Want you add other recepient?(Yes/No): ");
-                        answer = Console.ReadLine().ToLower();
+                        WriteLine("Want you add other recepient?(Yes/No): ");
+                        answer = ReadLine().ToLower();
                         if (answer == "yes") { stop = false; }
                         else { stop = true; }
                     }
-
-                }
-                while (!stop);
+                    while (!stop);
+                    WriteLine("Press any key to return");
+                    ReadKey();
+                    MessegesRecipientsMenu();
+                    return;
+                case 2:
+                    var messages1 = messageRepository.GetMessagesBySenderId(user.UserId);
+                    WriteLine("Recipients:");
+                    foreach (Message message in messages1)
+                    {
+                        var messagesResipients = recepientMessageRepository.GetRecepientsMessagesByMessageId(message.MessageId);
+                        foreach (RecepientMessage recepientMessage in messagesResipients)
+                        {
+                            Recepient recepient = recepientRepository.GetById(recepientMessage.RecepientId);
+                            WriteLine("Recepient's name: {0}  phone number: {1} ", recepient.FullName, recepient.RecepientPhone);
+                        }
+                    }
+                    WriteLine("Press any key to return");
+                    ReadKey();
+                    MessegesRecipientsMenu();
+                    return;
+                case 3:
+                    Recepient newRecepient1 = RecepientRegistration();
+                    recepientRepository.Create(newRecepient1);
+                    recepientRepository.SaveChanges();
+                    WriteLine("Press any key to return");
+                    ReadKey();
+                    MessegesRecipientsMenu();
+                    return;
+                case 4:
+                    return;
+                default:
+                    WriteLine("GoodBye");
+                    return;
             }
-           
-        
-
         }
+
+        static int UserInterface(params string[] menuItems)
+        {
+            short curItem = 0, c;
+            ConsoleKeyInfo key;
+
+            do
+            {
+                Clear();
+                WriteLine("Select an option . . .");
+                for (c = 0; c < menuItems.Length; c++)
+                {
+                    if (curItem == c)
+                    {
+                        Write(">>");
+                        WriteLine(menuItems[c]);
+                    }
+                    else
+                    {
+                        WriteLine(menuItems[c]);
+                    }
+                }
+
+                key = ReadKey(true);
+
+                if (key.Key.ToString() == "DownArrow")
+                {
+                    curItem++;
+                    if (curItem > menuItems.Length - 1) curItem = 0;
+                }
+                else if (key.Key.ToString() == "UpArrow")
+                {
+                    curItem--;
+                    if (curItem < 0) curItem = Convert.ToInt16(menuItems.Length - 1);
+                }
+            } while (key.KeyChar != 13);
+
+            Clear();
+
+            return curItem;
+        }
+
         static User UserRegistration()
         {
             User newUser = new User();
-            Console.WriteLine("Input phone number: ");
-            newUser.UserId = Console.ReadLine();
-            Console.WriteLine("Input password: ");
-            newUser.Passeword = Console.ReadLine();
-            Console.WriteLine("Input full name: ");
-            newUser.FullName = Console.ReadLine();
-            Console.WriteLine("Input address: ");
-            newUser.Address = Console.ReadLine();
+            WriteLine("Input phone number: ");
+            newUser.UserPhone = ReadLine();
+            WriteLine("Input password: ");
+            newUser.Password = ReadLine();
+            WriteLine("Input full name: ");
+            newUser.FullName = ReadLine();
             return newUser;
         }
 
         static Recepient RecepientRegistration()
         {
             Recepient newRecepient = new Recepient();
-            Console.WriteLine("Input phone number: ");
-            newRecepient.RecepientId = Console.ReadLine();
-            Console.WriteLine("Input full name: ");
-            newRecepient.FullName = Console.ReadLine();
-            Console.WriteLine("Input address: ");
-            newRecepient.Address = Console.ReadLine();
-
+            WriteLine("Input phone number: ");
+            newRecepient.RecepientPhone = ReadLine();
+            WriteLine("Input full name: ");
+            newRecepient.FullName = ReadLine();
             return newRecepient;
         }
-   
     }
-
-
-
 }
-    
